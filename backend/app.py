@@ -3,10 +3,13 @@ from flask import Flask
 from flask_cors import CORS
 from api.routes import api_bp, init_model
 
+import os
+
 def create_app():
     app = Flask(__name__)
-    # In production, set origins=["https://yourdomain.com"]
-    CORS(app, origins=["*"])
+    # In production, set ALLOWED_ORIGINS=https://yourdomain.com in .env
+    allowed = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
+    CORS(app, origins=allowed)
 
     app.register_blueprint(api_bp, url_prefix='/api/v1')
 

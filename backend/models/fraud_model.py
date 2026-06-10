@@ -64,9 +64,11 @@ def load_model(name='fraud_ensemble'):
         raise FileNotFoundError(f"No saved model at {path}. Train first.")
     
     data = joblib.load(path)
-    if isinstance(data, dict) and 'model' in data:
-        return data['model']
-    return data # Fallback for old models
+    if not isinstance(data, dict) or 'model' not in data:
+        raise ValueError(
+            "Model file is in old format. Delete it and retrain with: python models/train_model.py"
+        )
+    return data['model']
 
 def get_risk_score(model, features) -> dict:
     proba = model.predict_proba(features)[0][1]
