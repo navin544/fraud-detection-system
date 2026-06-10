@@ -1,0 +1,30 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv.bak/
+ENV/
+env.bak/
+
+# Android
+.gradle/
+build/
+*.iml
+.idea/
+local.properties
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aar
+*.jks
+
+# Models
+backend/models/saved_models/*.pkl
+backend/models/saved_models/*.json
+backend/models/saved_models/*.txt
