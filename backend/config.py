@@ -2,7 +2,7 @@
 import os
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'upi-fraud-secret-2024')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
     DEBUG = False
     TESTING = False
     MODEL_PATH = 'models/saved_models/'

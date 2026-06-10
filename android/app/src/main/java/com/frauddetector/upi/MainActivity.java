@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
         );
         req.receiverId      = etReceiverId.getText().toString().trim();
         req.isNewBeneficiary= cbNewBeneficiary.isChecked() ? 1 : 0;
+        req.isNight         = cbNight.isChecked() ? 1 : 0;
         req.deviceChanged   = cbDeviceChange.isChecked() ? 1 : 0;
         req.locationAnomaly = cbLocation.isChecked() ? 1 : 0;
 

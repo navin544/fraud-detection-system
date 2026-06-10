@@ -1,6 +1,7 @@
 // app/src/main/java/com/frauddetector/upi/network/RetrofitClient.java
 package com.frauddetector.upi.network;
 
+import com.frauddetector.upi.BuildConfig;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -15,7 +16,7 @@ public class RetrofitClient {
 
     private RetrofitClient() {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+        logging.setLevel(BuildConfig.DEBUG ? HttpLoggingInterceptor.Level.BODY : HttpLoggingInterceptor.Level.BASIC);
 
         OkHttpClient client = new OkHttpClient.Builder()
             .addInterceptor(logging)

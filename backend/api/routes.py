@@ -39,6 +39,8 @@ def health():
 
 @api_bp.route('/predict', methods=['POST'])
 def predict():
+    if model is None:
+        return jsonify({'error': 'Model not loaded'}), 503
     try:
         data = request.get_json(force=True)
         if not data:

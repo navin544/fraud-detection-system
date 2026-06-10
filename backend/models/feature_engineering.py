@@ -10,7 +10,8 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df['hour'] = pd.to_datetime(df['timestamp']).dt.hour
     df['day_of_week'] = pd.to_datetime(df['timestamp']).dt.dayofweek
     df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
-    df['is_night'] = ((df['hour'] >= 22) | (df['hour'] <= 5)).astype(int)
+    if 'is_night' not in df.columns:
+        df['is_night'] = ((df['hour'] >= 22) | (df['hour'] <= 5)).astype(int)
 
     # Amount-based features
     df['amount_log'] = np.log1p(df['amount'])
@@ -52,5 +53,8 @@ def single_transaction_features(txn: dict) -> pd.DataFrame:
         'device_changed': int(txn.get('device_changed', 0)),
         'location_anomaly': int(txn.get('location_anomaly', 0)),
     }
+    if 'is_night' in txn:
+        row['is_night'] = int(txn['is_night'])
+        
     df = pd.DataFrame([row])
     return engineer_features(df)
