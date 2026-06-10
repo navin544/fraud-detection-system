@@ -7,11 +7,13 @@ import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import android.util.Log;
 import com.frauddetector.upi.model.*;
 import com.frauddetector.upi.network.RetrofitClient;
 import com.frauddetector.upi.db.AppDatabase;
 import com.frauddetector.upi.db.TransactionDao;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import retrofit2.Call;
@@ -122,13 +124,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveTransactionToHistory(TransactionRequest req) {
-        Observable.fromAction(() -> {
+        Completable.fromAction(() -> {
             AppDatabase.getInstance(this).transactionDao().insert(
                 new TransactionEntity(req.senderId, req.amount, System.currentTimeMillis())
             );
         })
         .subscribeOn(Schedulers.io())
-        .subscribe();
+        .subscribe(
+            () -> {}, // Success
+            throwable -> Log.e("DB_ERROR", "Failed to save transaction: " + throwable.getMessage())
+        );
     }
 
     private void displayResult(FraudResponse result) {

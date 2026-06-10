@@ -17,6 +17,6 @@ public interface TransactionDao {
     @Query("SELECT COUNT(*) FROM transactions WHERE senderId = :senderId AND timestamp >= :since")
     int getCountRecent(String senderId, long since);
 
-    @Query("SELECT SUM(amount) FROM transactions WHERE senderId = :senderId AND timestamp >= :since")
+    @Query("SELECT COALESCE(SUM(amount), 0.0) FROM transactions WHERE senderId = :senderId AND timestamp >= :since")
     double getSumRecent(String senderId, long since);
 }
