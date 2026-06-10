@@ -33,11 +33,11 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # Drop non-numeric columns for model
     feature_cols = [
-        'amount', 'amount_log', 'hour', 'day_of_week',
+        'amount', 'hour', 'day_of_week',
         'is_weekend', 'is_night', 'is_round_amount', 'is_high_value',
         'txn_count_1h', 'txn_sum_1h', 'avg_txn_amount',
         'new_beneficiary', 'international_txn',
-        'device_change', 'location_anomaly'
+        'device_change', 'location_anomaly', 'amount_log'
     ]
     return df[feature_cols]
 

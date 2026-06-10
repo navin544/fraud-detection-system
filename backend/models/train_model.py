@@ -1,6 +1,7 @@
 # train_model.py
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from sklearn.model_selection import train_test_split
 try:
     from models.fraud_model import build_ensemble, save_model
@@ -25,47 +26,42 @@ def generate_synthetic_data(n_samples=50000, fraud_rate=0.02):
     n_fraud = int(n_samples * fraud_rate)
     n_legit = n_samples - n_fraud
 
-    legit = {
-        'amount': np.random.lognormal(8, 1.5, n_legit),
-        'hour': np.random.randint(8, 22, n_legit),
-        'day_of_week': np.random.randint(0, 7, n_legit),
-        'is_weekend': np.random.binomial(1, 0.28, n_legit),
-        'is_night': np.random.binomial(1, 0.05, n_legit),
-        'is_round_amount': np.random.binomial(1, 0.3, n_legit),
-        'is_high_value': np.random.binomial(1, 0.02, n_legit),
-        'txn_count_1h': np.random.randint(1, 5, n_legit),
-        'txn_sum_1h': np.random.lognormal(9, 1, n_legit),
-        'avg_txn_amount': np.random.lognormal(8, 1, n_legit),
-        'new_beneficiary': np.random.binomial(1, 0.15, n_legit),
-        'international_txn': np.random.binomial(1, 0.01, n_legit),
-        'device_change': np.random.binomial(1, 0.02, n_legit),
-        'location_anomaly': np.random.binomial(1, 0.02, n_legit),
-        'amount_log': None, 'label': 0
-    }
+    def get_base_data(n, is_fraud):
+        if not is_fraud:
+            data = {
+                'amount': np.random.lognormal(8, 1.5, n),
+                'timestamp': [datetime.now().isoformat() for _ in range(n)],
+                'sender_id': [f'user_{i}' for i in np.random.randint(0, 1000, n)],
+                'is_new_beneficiary': np.random.binomial(1, 0.15, n),
+                'is_international': np.random.binomial(1, 0.01, n),
+                'device_changed': np.random.binomial(1, 0.02, n),
+                'location_anomaly': np.random.binomial(1, 0.02, n),
+            }
+        else:
+            data = {
+                'amount': np.random.lognormal(10, 2, n),
+                'timestamp': [datetime.now().isoformat() for _ in range(n)],
+                'sender_id': [f'fraud_user_{i}' for i in np.random.randint(0, 100, n)],
+                'is_new_beneficiary': np.random.binomial(1, 0.8, n),
+                'is_international': np.random.binomial(1, 0.3, n),
+                'device_changed': np.random.binomial(1, 0.6, n),
+                'location_anomaly': np.random.binomial(1, 0.7, n),
+            }
+        return pd.DataFrame(data)
 
-    fraud = {
-        'amount': np.random.lognormal(10, 2, n_fraud),
-        'hour': np.random.choice(list(range(0, 6)) + list(range(22, 24)), n_fraud),
-        'day_of_week': np.random.randint(0, 7, n_fraud),
-        'is_weekend': np.random.binomial(1, 0.4, n_fraud),
-        'is_night': np.random.binomial(1, 0.6, n_fraud),
-        'is_round_amount': np.random.binomial(1, 0.6, n_fraud),
-        'is_high_value': np.random.binomial(1, 0.4, n_fraud),
-        'txn_count_1h': np.random.randint(5, 30, n_fraud),
-        'txn_sum_1h': np.random.lognormal(12, 1, n_fraud),
-        'avg_txn_amount': np.random.lognormal(10, 1, n_fraud),
-        'new_beneficiary': np.random.binomial(1, 0.8, n_fraud),
-        'international_txn': np.random.binomial(1, 0.3, n_fraud),
-        'device_change': np.random.binomial(1, 0.6, n_fraud),
-        'location_anomaly': np.random.binomial(1, 0.7, n_fraud),
-        'amount_log': None, 'label': 1
-    }
-
-    df_legit = pd.DataFrame(legit)
-    df_fraud = pd.DataFrame(fraud)
-    df = pd.concat([df_legit, df_fraud]).sample(frac=1, random_state=42).reset_index(drop=True)
-    df['amount_log'] = np.log1p(df['amount'])
-    return df
+    df_legit = get_base_data(n_legit, False)
+    df_fraud = get_base_data(n_fraud, True)
+    
+    df_legit['label'] = 0
+    df_fraud['label'] = 1
+    
+    df = pd.concat([df_legit, df_fraud])
+    
+    # Process features using the central engineer_features
+    features_df = engineer_features(df)
+    features_df['label'] = df['label'].values
+    
+    return features_df.sample(frac=1, random_state=42).reset_index(drop=True)
 
 def train():
     print("=== UPI Fraud Detection Model Training ===\n")
