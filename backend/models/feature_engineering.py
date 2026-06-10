@@ -19,9 +19,12 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df['is_high_value'] = (df['amount'] > 50000).astype(int)
 
     # Velocity features (transactions per user in last N hours)
-    df['txn_count_1h'] = df.groupby('sender_id')['amount'].transform('count')
-    df['txn_sum_1h'] = df.groupby('sender_id')['amount'].transform('sum')
-    df['avg_txn_amount'] = df.groupby('sender_id')['amount'].transform('mean')
+    if 'txn_count_1h' not in df.columns:
+        df['txn_count_1h'] = df.groupby('sender_id')['amount'].transform('count')
+    if 'txn_sum_1h' not in df.columns:
+        df['txn_sum_1h'] = df.groupby('sender_id')['amount'].transform('sum')
+    if 'avg_txn_amount' not in df.columns:
+        df['avg_txn_amount'] = df.groupby('sender_id')['amount'].transform('mean')
 
     # Beneficiary features
     df['new_beneficiary'] = df['is_new_beneficiary'] if 'is_new_beneficiary' in df.columns else 0
@@ -52,6 +55,9 @@ def single_transaction_features(txn: dict) -> pd.DataFrame:
         'is_international': int(txn.get('is_international', 0)),
         'device_changed': int(txn.get('device_changed', 0)),
         'location_anomaly': int(txn.get('location_anomaly', 0)),
+        'txn_count_1h': int(txn.get('txn_count_1h', 1)),
+        'txn_sum_1h': float(txn.get('txn_sum_1h', txn.get('amount', 0))),
+        'avg_txn_amount': float(txn.get('avg_txn_amount', txn.get('amount', 0))),
     }
     if 'is_night' in txn:
         row['is_night'] = int(txn['is_night'])

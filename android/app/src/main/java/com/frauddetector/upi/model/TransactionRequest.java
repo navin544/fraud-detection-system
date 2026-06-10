@@ -17,6 +17,11 @@ public class TransactionRequest {
     @SerializedName("is_international") public int isInternational;
     @SerializedName("device_changed")   public int deviceChanged;
     @SerializedName("location_anomaly") public int locationAnomaly;
+    
+    // Velocity features (sent from client-side Room DB tracking)
+    @SerializedName("txn_count_1h")     public int txnCount1h;
+    @SerializedName("txn_sum_1h")       public double txnSum1h;
+    @SerializedName("avg_txn_amount")    public double avgTxnAmount;
 
     public TransactionRequest(double amount, String senderId) {
         this.amount = amount;

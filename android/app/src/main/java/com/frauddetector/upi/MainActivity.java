@@ -9,6 +9,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import com.frauddetector.upi.model.*;
 import com.frauddetector.upi.network.RetrofitClient;
+import com.frauddetector.upi.db.AppDatabase;
+import com.frauddetector.upi.db.TransactionDao;
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -54,19 +59,44 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        double amount = Double.parseDouble(amountStr);
         progressBar.setVisibility(View.VISIBLE);
         cardResult.setVisibility(View.GONE);
         btnAnalyze.setEnabled(false);
 
-        TransactionRequest req = new TransactionRequest(
-            Double.parseDouble(amountStr), senderId
-        );
-        req.receiverId      = etReceiverId.getText().toString().trim();
-        req.isNewBeneficiary= cbNewBeneficiary.isChecked() ? 1 : 0;
-        req.isNight         = cbNight.isChecked() ? 1 : 0;
-        req.deviceChanged   = cbDeviceChange.isChecked() ? 1 : 0;
-        req.locationAnomaly = cbLocation.isChecked() ? 1 : 0;
+        long oneHourAgo = System.currentTimeMillis() - (3600 * 1000);
+        TransactionDao dao = AppDatabase.getInstance(this).transactionDao();
 
+        // Use RxJava to query DB off main thread
+        Observable.fromCallable(() -> {
+            int count = dao.getCountRecent(senderId, oneHourAgo);
+            double sum = dao.getSumRecent(senderId, oneHourAgo);
+            return new double[]{count, sum};
+        })
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(stats -> {
+            TransactionRequest req = new TransactionRequest(amount, senderId);
+            req.receiverId      = etReceiverId.getText().toString().trim();
+            req.isNewBeneficiary= cbNewBeneficiary.isChecked() ? 1 : 0;
+            req.isNight         = cbNight.isChecked() ? 1 : 0;
+            req.deviceChanged   = cbDeviceChange.isChecked() ? 1 : 0;
+            req.locationAnomaly = cbLocation.isChecked() ? 1 : 0;
+            
+            // Populate velocity features from local DB
+            req.txnCount1h      = (int) stats[0] + 1; // +1 for current txn
+            req.txnSum1h        = stats[1] + amount;
+            req.avgTxnAmount    = req.txnSum1h / req.txnCount1h;
+
+            sendPredictionRequest(req);
+        }, throwable -> {
+            progressBar.setVisibility(View.GONE);
+            btnAnalyze.setEnabled(true);
+            Toast.makeText(this, "Local DB error: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void sendPredictionRequest(TransactionRequest req) {
         RetrofitClient.getInstance().getApiService()
             .predictFraud(req)
             .enqueue(new Callback<FraudResponse>() {
@@ -76,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
                     btnAnalyze.setEnabled(true);
                     if (response.isSuccessful() && response.body() != null) {
                         displayResult(response.body());
+                        saveTransactionToHistory(req);
                     } else {
                         Toast.makeText(MainActivity.this, "API Error", Toast.LENGTH_SHORT).show();
                     }
@@ -88,6 +119,16 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                 }
             });
+    }
+
+    private void saveTransactionToHistory(TransactionRequest req) {
+        Observable.fromAction(() -> {
+            AppDatabase.getInstance(this).transactionDao().insert(
+                new TransactionEntity(req.senderId, req.amount, System.currentTimeMillis())
+            );
+        })
+        .subscribeOn(Schedulers.io())
+        .subscribe();
     }
 
     private void displayResult(FraudResponse result) {
