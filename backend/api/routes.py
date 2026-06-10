@@ -15,6 +15,14 @@ import json, os
 
 api_bp = Blueprint('api', __name__)
 
+@api_bp.before_request
+def validate_api_key():
+    if request.endpoint == 'api.health':
+        return
+    api_key = os.environ.get('API_KEY')
+    if api_key and request.headers.get('X-API-Key') != api_key:
+        return jsonify({'error': 'Unauthorized'}), 401
+
 # Load model at startup
 model = None
 threshold = 0.5
@@ -89,11 +97,6 @@ def batch_predict():
 def metrics():
     try:
         with open('models/saved_models/metrics.json') as f:
-            m = json.load(f)
-        return jsonify(m), 200
-    except:
-        return jsonify({'error': 'No metrics found. Train model first.'}), 404
-ved_models/metrics.json') as f:
             m = json.load(f)
         return jsonify(m), 200
     except:

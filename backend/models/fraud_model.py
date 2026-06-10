@@ -47,18 +47,26 @@ def build_ensemble():
     )
     return ensemble
 
-def save_model(model, name='fraud_ensemble'):
+def save_model(model, feature_cols, name='fraud_ensemble'):
     os.makedirs(MODEL_DIR, exist_ok=True)
     path = os.path.join(MODEL_DIR, f'{name}.pkl')
-    joblib.dump(model, path)
-    print(f"Model saved to {path}")
+    # Save both model and feature column list to prevent schema mismatch
+    joblib.dump({
+        'model': model,
+        'feature_cols': feature_cols
+    }, path)
+    print(f"Model and features saved to {path}")
     return path
 
 def load_model(name='fraud_ensemble'):
     path = os.path.join(MODEL_DIR, f'{name}.pkl')
     if not os.path.exists(path):
         raise FileNotFoundError(f"No saved model at {path}. Train first.")
-    return joblib.load(path)
+    
+    data = joblib.load(path)
+    if isinstance(data, dict) and 'model' in data:
+        return data['model']
+    return data # Fallback for old models
 
 def get_risk_score(model, features) -> dict:
     proba = model.predict_proba(features)[0][1]

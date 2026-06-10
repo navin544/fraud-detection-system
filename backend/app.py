@@ -5,7 +5,8 @@ from api.routes import api_bp, init_model
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    # In production, set origins=["https://yourdomain.com"]
+    CORS(app, origins=["*"])
 
     app.register_blueprint(api_bp, url_prefix='/api/v1')
 
@@ -16,4 +17,4 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)

@@ -1,4 +1,3 @@
-// app/src/main/java/com/frauddetector/upi/network/RetrofitClient.java
 package com.frauddetector.upi.network;
 
 import com.frauddetector.upi.BuildConfig;
@@ -15,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 public class RetrofitClient {
     // For emulator: use 10.0.2.2  |  For real device: use your PC's LAN IP
     private static final String BASE_URL = "http://192.168.192.193:5000/";
-    private static final String API_KEY = "your_api_key_here"; // Should be in local.properties
+    private static final String API_KEY = BuildConfig.API_KEY;
     private static RetrofitClient instance;
     private ApiService apiService;
 

@@ -107,7 +107,7 @@ def train():
     print(json.dumps({k: v for k, v in metrics.items() if k != 'classification_report'}, indent=2))
 
     # Save
-    save_model(model, 'fraud_ensemble')
+    save_model(model, feature_cols, 'fraud_ensemble')
     
     # Ensure directory exists
     os.makedirs('models/saved_models', exist_ok=True)
