@@ -67,6 +67,8 @@ def predict():
 
 @api_bp.route('/batch_predict', methods=['POST'])
 def batch_predict():
+    if model is None:
+        return jsonify({'error': 'Model not loaded'}), 503
     try:
         data = request.get_json(force=True)
         transactions = data.get('transactions', [])
@@ -87,6 +89,11 @@ def batch_predict():
 def metrics():
     try:
         with open('models/saved_models/metrics.json') as f:
+            m = json.load(f)
+        return jsonify(m), 200
+    except:
+        return jsonify({'error': 'No metrics found. Train model first.'}), 404
+ved_models/metrics.json') as f:
             m = json.load(f)
         return jsonify(m), 200
     except:

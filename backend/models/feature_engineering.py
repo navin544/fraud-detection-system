@@ -24,20 +24,20 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     df['avg_txn_amount'] = df.groupby('sender_id')['amount'].transform('mean')
 
     # Beneficiary features
-    df['new_beneficiary'] = df.get('is_new_beneficiary', 0)
-    df['international_txn'] = df.get('is_international', 0)
+    df['new_beneficiary'] = df['is_new_beneficiary'] if 'is_new_beneficiary' in df.columns else 0
+    df['international_txn'] = df['is_international'] if 'is_international' in df.columns else 0
 
     # Device / location anomaly
-    df['device_change'] = df.get('device_changed', 0)
-    df['location_anomaly'] = df.get('location_anomaly', 0)
+    df['device_change'] = df['device_changed'] if 'device_changed' in df.columns else 0
+    df['location_anomaly'] = df['location_anomaly'] if 'location_anomaly' in df.columns else 0
 
     # Drop non-numeric columns for model
     feature_cols = [
-        'amount', 'hour', 'day_of_week',
+        'amount', 'amount_log', 'hour', 'day_of_week',
         'is_weekend', 'is_night', 'is_round_amount', 'is_high_value',
         'txn_count_1h', 'txn_sum_1h', 'avg_txn_amount',
         'new_beneficiary', 'international_txn',
-        'device_change', 'location_anomaly', 'amount_log'
+        'device_change', 'location_anomaly'
     ]
     return df[feature_cols]
 
