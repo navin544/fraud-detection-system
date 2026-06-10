@@ -55,6 +55,6 @@ def single_transaction_features(txn: dict) -> pd.DataFrame:
     }
     if 'is_night' in txn:
         row['is_night'] = int(txn['is_night'])
-        
+
     df = pd.DataFrame([row])
     return engineer_features(df)
