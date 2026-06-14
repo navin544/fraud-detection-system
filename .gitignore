@@ -25,6 +25,5 @@ captures/
 *.jks
 
 # Models
-backend/models/saved_models/*.pkl
-backend/models/saved_models/*.json
-backend/models/saved_models/*.txt
+# (Removed ignore patterns to allow model deployment)
+
