@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
     // For emulator: use 10.0.2.2  |  For real device: use your PC's LAN IP
-    private static final String BASE_URL = "http://192.168.1.12:5000/";
+    private static final String BASE_URL = "https://fraud-detection-system-1-m8v2.onrender.com/";
     private static final String API_KEY = BuildConfig.API_KEY;
     private static RetrofitClient instance;
     private ApiService apiService;
