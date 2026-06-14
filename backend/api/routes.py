@@ -58,6 +58,16 @@ def predict():
         for field in required:
             if field not in data:
                 return jsonify({'error': f'Missing field: {field}'}), 400
+        
+        # Input Validation
+        try:
+            amount = float(data.get('amount', 0))
+            if amount <= 0:
+                return jsonify({'error': 'Amount must be greater than 0'}), 400
+            if len(str(data.get('sender_id', ''))) < 3:
+                return jsonify({'error': 'Invalid sender_id'}), 400
+        except ValueError:
+            return jsonify({'error': 'Invalid numeric data'}), 400
 
         features = single_transaction_features(data)
         result = get_risk_score(model, features)

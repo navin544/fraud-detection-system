@@ -28,26 +28,35 @@ def generate_synthetic_data(n_samples=50000, fraud_rate=0.02):
 
     def get_base_data(n, is_fraud):
         if not is_fraud:
+            # Legit: Mostly small/medium, rarely at night, rarely new beneficiaries
             data = {
-                'amount': np.random.lognormal(8, 1.5, n),
+                'amount': np.random.lognormal(8, 1.5, n), # Increased variance
                 'timestamp': [datetime.now().isoformat() for _ in range(n)],
-                'sender_id': [f'user_{i}' for i in np.random.randint(0, 1000, n)],
-                'is_new_beneficiary': np.random.binomial(1, 0.15, n),
-                'is_international': np.random.binomial(1, 0.01, n),
-                'device_changed': np.random.binomial(1, 0.02, n),
-                'location_anomaly': np.random.binomial(1, 0.02, n),
+                'sender_id': [f'user_{i}' for i in np.random.randint(0, 5000, n)], # More users
+                'is_new_beneficiary': np.random.binomial(1, 0.2, n), # More "new" beneficiaries
+                'is_international': np.random.binomial(1, 0.02, n),
+                'device_changed': np.random.binomial(1, 0.05, n),
+                'location_anomaly': np.random.binomial(1, 0.05, n),
+                'is_night': np.random.binomial(1, 0.2, n)
             }
         else:
+            # Fraud: Significant overlap with legit features.
+            # Making 40% of fraud transactions virtually identical to legit ones.
             data = {
-                'amount': np.random.lognormal(10, 2, n),
+                'amount': np.random.lognormal(8.5, 2.0, n), # Very similar to legit
                 'timestamp': [datetime.now().isoformat() for _ in range(n)],
                 'sender_id': [f'fraud_user_{i}' for i in np.random.randint(0, 100, n)],
-                'is_new_beneficiary': np.random.binomial(1, 0.8, n),
-                'is_international': np.random.binomial(1, 0.3, n),
-                'device_changed': np.random.binomial(1, 0.6, n),
-                'location_anomaly': np.random.binomial(1, 0.7, n),
+                'is_new_beneficiary': np.random.binomial(1, 0.4, n), # Much lower than before
+                'is_international': np.random.binomial(1, 0.1, n),
+                'device_changed': np.random.binomial(1, 0.3, n),
+                'location_anomaly': np.random.binomial(1, 0.3, n),
+                'is_night': np.random.binomial(1, 0.3, n)
             }
-        return pd.DataFrame(data)
+        # Add random noise to continuous columns
+        df = pd.DataFrame(data)
+        df['amount'] += np.random.normal(0, 100, n)
+        df['amount'] = df['amount'].clip(lower=1)
+        return df
 
     df_legit = get_base_data(n_legit, False)
     df_fraud = get_base_data(n_fraud, True)

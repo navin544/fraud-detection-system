@@ -15,6 +15,8 @@ import com.frauddetector.upi.db.TransactionDao;
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -29,11 +31,14 @@ public class MainActivity extends AppCompatActivity {
     TextView tvRiskLevel, tvProbability, tvRecommendation, tvRiskScore;
     ProgressBar progressBar;
 
+    private final CompositeDisposable disposables = new CompositeDisposable();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        
+        // ... (existing bindings)
         etAmount        = findViewById(R.id.etAmount);
         etSenderId      = findViewById(R.id.etSenderId);
         etReceiverId    = findViewById(R.id.etReceiverId);
@@ -50,6 +55,12 @@ public class MainActivity extends AppCompatActivity {
         progressBar     = findViewById(R.id.progressBar);
 
         btnAnalyze.setOnClickListener(v -> analyzeTransaction());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        disposables.clear();
     }
 
     private void analyzeTransaction() {
@@ -70,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         TransactionDao dao = AppDatabase.getInstance(this).transactionDao();
 
         // Use RxJava to query DB off main thread
-        Observable.fromCallable(() -> {
+        Disposable d = Observable.fromCallable(() -> {
             int count = dao.getCountRecent(senderId, oneHourAgo);
             double sum = dao.getSumRecent(senderId, oneHourAgo);
             return new double[]{count, sum};
@@ -96,6 +107,8 @@ public class MainActivity extends AppCompatActivity {
             btnAnalyze.setEnabled(true);
             Toast.makeText(this, "Local DB error: " + throwable.getMessage(), Toast.LENGTH_SHORT).show();
         });
+        
+        disposables.add(d);
     }
 
     private void sendPredictionRequest(TransactionRequest req) {
@@ -124,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveTransactionToHistory(TransactionRequest req) {
-        Completable.fromAction(() -> {
+        Disposable d = Completable.fromAction(() -> {
             AppDatabase.getInstance(this).transactionDao().insert(
                 new TransactionEntity(req.senderId, req.amount, System.currentTimeMillis())
             );
@@ -134,7 +147,9 @@ public class MainActivity extends AppCompatActivity {
             () -> {}, // Success
             throwable -> Log.e("DB_ERROR", "Failed to save transaction: " + throwable.getMessage())
         );
+        disposables.add(d);
     }
+
 
     private void displayResult(FraudResponse result) {
         cardResult.setVisibility(View.VISIBLE);
