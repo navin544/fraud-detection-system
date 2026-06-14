@@ -45,6 +45,21 @@ def health():
     return jsonify({'status': 'ok', 'timestamp': datetime.now().isoformat()})
 
 
+def validate_txn(data):
+    required = ['amount', 'sender_id']
+    for field in required:
+        if field not in data:
+            return f'Missing field: {field}'
+    try:
+        amount = float(data.get('amount', 0))
+        if amount <= 0:
+            return 'Amount must be greater than 0'
+        if len(str(data.get('sender_id', ''))) < 3:
+            return 'Invalid sender_id'
+    except ValueError:
+        return 'Invalid numeric data'
+    return None
+
 @api_bp.route('/predict', methods=['POST'])
 def predict():
     if model is None:
@@ -54,20 +69,9 @@ def predict():
         if not data:
             return jsonify({'error': 'No JSON body'}), 400
 
-        required = ['amount', 'sender_id']
-        for field in required:
-            if field not in data:
-                return jsonify({'error': f'Missing field: {field}'}), 400
-        
-        # Input Validation
-        try:
-            amount = float(data.get('amount', 0))
-            if amount <= 0:
-                return jsonify({'error': 'Amount must be greater than 0'}), 400
-            if len(str(data.get('sender_id', ''))) < 3:
-                return jsonify({'error': 'Invalid sender_id'}), 400
-        except ValueError:
-            return jsonify({'error': 'Invalid numeric data'}), 400
+        error = validate_txn(data)
+        if error:
+            return jsonify({'error': error}), 400
 
         features = single_transaction_features(data)
         result = get_risk_score(model, features)
@@ -92,6 +96,14 @@ def batch_predict():
         transactions = data.get('transactions', [])
         results = []
         for txn in transactions:
+            error = validate_txn(txn)
+            if error:
+                results.append({
+                    'transaction_id': txn.get('transaction_id', ''),
+                    'error': error
+                })
+                continue
+
             features = single_transaction_features(txn)
             result = get_risk_score(model, features)
             results.append({

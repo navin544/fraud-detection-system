@@ -20,37 +20,63 @@ from utils.smote_handler import apply_smote
 from utils.metrics import evaluate_model, find_optimal_threshold
 import json
 
+import random
+from datetime import datetime, timedelta
+
 def generate_synthetic_data(n_samples=50000, fraud_rate=0.02):
     """Generate synthetic UPI transaction data for training."""
     np.random.seed(42)
+    random.seed(42)
     n_fraud = int(n_samples * fraud_rate)
     n_legit = n_samples - n_fraud
+
+    def get_random_timestamps(n, hour_bias=None):
+        base_date = datetime.now()
+        ts_list = []
+        for _ in range(n):
+            days_back = random.randint(0, 90)
+            if hour_bias == 'night':
+                # Bias towards 10 PM - 5 AM
+                if random.random() < 0.7:
+                    hour = random.choice([22, 23, 0, 1, 2, 3, 4, 5])
+                else:
+                    hour = random.randint(6, 21)
+            else:
+                # Bias towards 8 AM - 8 PM
+                if random.random() < 0.8:
+                    hour = random.randint(8, 20)
+                else:
+                    hour = random.choice([21, 22, 23, 0, 1, 2, 3, 4, 5, 6, 7])
+            
+            minute = random.randint(0, 59)
+            second = random.randint(0, 59)
+            dt = base_date - timedelta(days=days_back)
+            dt = dt.replace(hour=hour, minute=minute, second=second)
+            ts_list.append(dt.isoformat())
+        return ts_list
 
     def get_base_data(n, is_fraud):
         if not is_fraud:
             # Legit: Mostly small/medium, rarely at night, rarely new beneficiaries
             data = {
-                'amount': np.random.lognormal(8, 1.5, n), # Increased variance
-                'timestamp': [datetime.now().isoformat() for _ in range(n)],
-                'sender_id': [f'user_{i}' for i in np.random.randint(0, 5000, n)], # More users
-                'is_new_beneficiary': np.random.binomial(1, 0.2, n), # More "new" beneficiaries
+                'amount': np.random.lognormal(8, 1.5, n),
+                'timestamp': get_random_timestamps(n, hour_bias='day'),
+                'sender_id': [f'user_{i}' for i in np.random.randint(0, 5000, n)],
+                'is_new_beneficiary': np.random.binomial(1, 0.2, n),
                 'is_international': np.random.binomial(1, 0.02, n),
                 'device_changed': np.random.binomial(1, 0.05, n),
                 'location_anomaly': np.random.binomial(1, 0.05, n),
-                'is_night': np.random.binomial(1, 0.2, n)
             }
         else:
-            # Fraud: Significant overlap with legit features.
-            # Making 40% of fraud transactions virtually identical to legit ones.
+            # Fraud: High overlap. Bias towards night.
             data = {
-                'amount': np.random.lognormal(8.5, 2.0, n), # Very similar to legit
-                'timestamp': [datetime.now().isoformat() for _ in range(n)],
+                'amount': np.random.lognormal(8.5, 2.0, n),
+                'timestamp': get_random_timestamps(n, hour_bias='night'),
                 'sender_id': [f'fraud_user_{i}' for i in np.random.randint(0, 100, n)],
-                'is_new_beneficiary': np.random.binomial(1, 0.4, n), # Much lower than before
+                'is_new_beneficiary': np.random.binomial(1, 0.4, n),
                 'is_international': np.random.binomial(1, 0.1, n),
                 'device_changed': np.random.binomial(1, 0.3, n),
                 'location_anomaly': np.random.binomial(1, 0.3, n),
-                'is_night': np.random.binomial(1, 0.3, n)
             }
         # Add random noise to continuous columns
         df = pd.DataFrame(data)
